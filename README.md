@@ -1,23 +1,5 @@
-# Momentum Relative Desk
+# Momentum Relative Desk V6
 
-כלי סטטי למעקב תוך-יומי אחרי חוזק יחסי של מניות מול קבוצות מסחר.
+Trader View: compact relative momentum dashboard with Finnhub quote API.
 
-## התקנה ב-GitHub Pages
-
-1. צור Repository חדש בגיטהאב.
-2. העלה את הקבצים לתיקיית השורש של הריפו.
-3. ודא שהקובץ הראשי נקרא `index.html`.
-4. עבור אל Settings > Pages.
-5. בחר Source: Deploy from a branch.
-6. בחר Branch: `main`, Folder: `/root`.
-7. לחץ Save.
-
-## אבטחת API
-
-אין להכניס Finnhub API Key לקוד או ל-Repository.
-המפתח מוזן ידנית בדפדפן ונשמר ב-localStorage בלבד.
-
-## קבצים
-
-- `index.html`: הכלי המלא.
-- `.nojekyll`: מונע עיבוד Jekyll לא נחוץ.
+Do not commit API keys. Enter the Finnhub key in the browser only.

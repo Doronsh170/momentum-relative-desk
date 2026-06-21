@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Momentum Relative Desk V4, Finnhub Expanded</title>
+  <title>Momentum Relative Desk V6, Trader View</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -20,6 +20,8 @@
       --orange: #d97706;
       --purple: #7c3aed;
       --cyan: #0891b2;
+      --header-height: 82px;
+      --table-sticky-top: 90px;
     }
     * { box-sizing: border-box; }
     body {
@@ -30,31 +32,35 @@
       line-height: 1.45;
     }
     header {
-      padding: 16px 20px 12px;
+      padding: 10px 20px 9px;
       border-bottom: 1px solid var(--line);
       background: linear-gradient(180deg, #111827, #0f172a);
       position: sticky;
       top: 0;
       z-index: 50;
     }
-    h1 { margin: 0; font-size: 22px; font-weight: 800; }
-    .subtitle { margin-top: 5px; color: var(--muted); font-size: 13px; }
-    .status-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
-    .pill { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; font-size: 12px; color: var(--text); }
+    h1 { margin: 0; font-size: 20px; font-weight: 800; }
+    .subtitle { margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .status-bar { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
+    .pill { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 9px; font-size: 12px; color: var(--text); }
     .pill.good { border-color: #166534; background: #052e16; }
     .pill.warn { border-color: #92400e; background: #451a03; }
-    .layout { display: grid; grid-template-columns: 270px 1fr; min-height: calc(100vh - 105px); }
+    .layout { display: grid; grid-template-columns: 250px 1fr; min-height: calc(100vh - var(--header-height)); align-items: start; }
     aside {
       border-left: 1px solid var(--line);
       background: #0b1220;
       padding: 14px;
       position: sticky;
-      top: 98px;
-      height: calc(100vh - 98px);
+      top: var(--header-height);
+      height: calc(100vh - var(--header-height));
       overflow: auto;
     }
-    main { padding: 16px; overflow: auto; }
-    .toolbar { display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+    main { padding: 14px 16px; overflow: visible; min-width: 0; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+    .primary-bar { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto auto; gap: 8px; margin-bottom: 10px; align-items: center; }
+    .advanced { border: 1px solid var(--line); background: #0b1220; border-radius: 12px; padding: 8px 10px; margin-bottom: 10px; }
+    .advanced summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .advanced[open] summary { margin-bottom: 10px; color: var(--text); }
     button, select, input {
       font-family: Arial, Helvetica, sans-serif;
       border-radius: 8px;
@@ -78,16 +84,16 @@
     .theme-btn.active { background: #1d4ed8; border-color: #3b82f6; }
     .theme-count { color: var(--muted); font-size: 12px; }
     .theme-btn.active .theme-count { color: #dbeafe; }
-    .cards { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
-    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+    .cards { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
     .card .label { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
-    .card .value { font-size: 19px; font-weight: 800; }
+    .card .value { font-size: 18px; font-weight: 800; }
     .card .small { color: var(--muted); font-size: 12px; margin-top: 3px; min-height: 16px; }
     table { width: 100%; border-collapse: collapse; background: var(--table); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-    th, td { border-bottom: 1px solid var(--line); padding: 9px 10px; text-align: right; vertical-align: middle; font-size: 13px; }
-    th { color: var(--muted); background: #111827; font-weight: 700; position: sticky; top: 126px; z-index: 20; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px 12px; text-align: right; vertical-align: middle; font-size: 14px; }
+    th { color: var(--muted); background: #111827; font-weight: 700; position: sticky; top: var(--table-sticky-top); z-index: 20; box-shadow: 0 1px 0 var(--line); }
     tr:hover td { background: #101b31; }
-    .ticker { font-weight: 800; font-size: 15px; direction: ltr; text-align: right; }
+    .ticker { font-weight: 800; font-size: 16px; direction: ltr; text-align: right; }
     .name { color: var(--muted); font-size: 12px; }
     .tv-link { color: #93c5fd; text-decoration: none; direction: ltr; display: inline-block; }
     .num { direction: ltr; display: inline-block; font-weight: 800; }
@@ -102,12 +108,13 @@
     .weak { background: #450a0a; border-color: #991b1b; color: #fecaca; }
     .neutral { background: #111827; color: #d1d5db; }
     .missing { background: #111827; color: #9ca3af; }
-    .note { margin-top: 12px; color: var(--muted); font-size: 13px; border: 1px solid var(--line); background: #0b1220; border-radius: 12px; padding: 12px; }
+    .note { display:none; margin-top: 12px; color: var(--muted); font-size: 13px; border: 1px solid var(--line); background: #0b1220; border-radius: 12px; padding: 12px; }
     .log { white-space: pre-wrap; direction: ltr; text-align: left; max-height: 120px; overflow: auto; color: #cbd5e1; font-size: 12px; background: #020617; border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-top: 10px; }
     @media (max-width: 980px) {
       .layout { grid-template-columns: 1fr; }
       aside { position: static; height: auto; border-left: none; border-bottom: 1px solid var(--line); }
       .cards { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+      .primary-bar { grid-template-columns: 1fr; }
       th { position: static; }
       .apiKey { width: 100%; }
     }
@@ -115,8 +122,8 @@
 </head>
 <body>
 <header>
-  <h1>Momentum Relative Desk V4, Finnhub Expanded</h1>
-  <div class="subtitle">לוח שליטה יחסי: מניה מול קבוצת המסחר שלה. בלי איתותים, רק הובלה, פיגור וסגירת פער.</div>
+  <h1>Momentum Desk V6, Trader View</h1>
+  <div class="subtitle">מי מוביל, מי מפגר, ומי סוגר פער בתוך הקבוצה.</div>
   <div class="status-bar">
     <span class="pill good">מחובר ל־Finnhub REST Quote</span>
     <span class="pill">584 נכסים</span>
@@ -133,60 +140,57 @@
   </aside>
 
   <main>
-    <div class="toolbar">
+    <div class="primary-bar">
       <select id="themeSelect"></select>
-      <input id="apiKey" class="apiKey" type="password" placeholder="Finnhub API key" autocomplete="off" />
-      <button id="saveKeyBtn">שמור מפתח בדפדפן</button>
-      <button class="danger" id="clearKeyBtn">מחק מפתח</button>
-    </div>
-
-    <div class="toolbar">
-      <button class="primary" id="fetchBtn">משוך מחירים לקבוצה</button>
+      <button class="primary" id="fetchBtn">משוך מחירים</button>
       <select id="refreshInterval">
         <option value="60000">כל 60 שניות</option>
         <option value="30000">כל 30 שניות</option>
         <option value="120000">כל 120 שניות</option>
       </select>
-      <button class="good" id="autoBtn">הפעל עדכון אוטומטי</button>
-      <button id="copyTvBtn">העתק רשימת TradingView</button>
-      <button id="sampleBtn">טען דוגמת Nuclear</button>
-      <button class="danger" id="clearDataBtn">נקה נתונים</button>
+      <button class="good" id="autoBtn">עדכון אוטומטי</button>
     </div>
 
-    <div class="toolbar">
-      <input id="customTheme" placeholder="קבוצה להוספה, למשל Space" />
-      <input id="customTicker" placeholder="Ticker" style="width:90px; direction:ltr; text-align:left;" />
-      <select id="customExchange">
-        <option value="NASDAQ">NASDAQ</option>
-        <option value="NYSE">NYSE</option>
-        <option value="AMEX">AMEX</option>
-      </select>
-      <input id="customName" placeholder="שם חברה, אופציונלי" />
-      <button id="addCustomBtn">הוסף טיקר לקבוצה</button>
-      <button id="exportCustomBtn">ייצא תוספות</button>
-      <button class="danger" id="clearCustomBtn">נקה תוספות</button>
-    </div>
+    <details class="advanced">
+      <summary>הגדרות, מפתח API, תוספות ופעולות נוספות</summary>
+      <div class="toolbar">
+        <input id="apiKey" class="apiKey" type="password" placeholder="Finnhub API key" autocomplete="off" />
+        <button id="saveKeyBtn">שמור מפתח בדפדפן</button>
+        <button class="danger" id="clearKeyBtn">מחק מפתח</button>
+        <button id="copyTvBtn">העתק רשימת TradingView</button>
+        <button id="sampleBtn">טען דוגמת Nuclear</button>
+        <button class="danger" id="clearDataBtn">נקה נתונים</button>
+      </div>
+      <div class="toolbar">
+        <input id="customTheme" placeholder="קבוצה להוספה, למשל Space" />
+        <input id="customTicker" placeholder="Ticker" style="width:90px; direction:ltr; text-align:left;" />
+        <select id="customExchange">
+          <option value="NASDAQ">NASDAQ</option>
+          <option value="NYSE">NYSE</option>
+          <option value="AMEX">AMEX</option>
+        </select>
+        <input id="customName" placeholder="שם חברה, אופציונלי" />
+        <button id="addCustomBtn">הוסף טיקר לקבוצה</button>
+        <button id="exportCustomBtn">ייצא תוספות</button>
+        <button class="danger" id="clearCustomBtn">נקה תוספות</button>
+      </div>
+    </details>
 
     <div class="cards">
-      <div class="card"><div class="label">קבוצה נבחרת</div><div class="value" id="cardTheme"></div><div class="small" id="cardCount"></div></div>
-      <div class="card"><div class="label">ממוצע שינוי יומי</div><div class="value" id="cardAvgDay">אין</div><div class="small">לפי מחיר נוכחי מול סגירה קודמת</div></div>
-      <div class="card"><div class="label">מובילות</div><div class="value" id="cardLeaders">אין</div><div class="small">פער חיובי מול הקבוצה</div></div>
-      <div class="card"><div class="label">מפגרות שסוגרות פער</div><div class="value" id="cardClosing">אין</div><div class="small">חלשות יומית, חזקות ב־15 דקות</div></div>
-      <div class="card"><div class="label">היסטוריית 15 דקות</div><div class="value" id="cardHistory">אין</div><div class="small">נבנית כשהכלי פתוח</div></div>
+      <div class="card"><div class="label">קבוצה</div><div class="value" id="cardTheme"></div><div class="small" id="cardCount"></div></div>
+      <div class="card"><div class="label">ממוצע קבוצה</div><div class="value" id="cardAvgDay">אין</div><div class="small">יומי</div></div>
+      <div class="card"><div class="label">מובילות</div><div class="value" id="cardLeaders">אין</div><div class="small">הכי חזקות מול הקבוצה</div></div>
+      <div class="card"><div class="label">סוגרות פער</div><div class="value" id="cardClosing">אין</div><div class="small">מפגרות יומית, חזקות ב־15 דק׳</div></div>
     </div>
 
     <table>
       <thead>
         <tr>
           <th>מניה</th>
-          <th>TradingView</th>
           <th>מחיר</th>
-          <th>סגירה קודמת</th>
-          <th>שינוי יומי</th>
-          <th>שינוי 15 דק׳</th>
-          <th>ממוצע קבוצה</th>
-          <th>פער מול קבוצה</th>
-          <th>פער 15 דק׳</th>
+          <th>יומי</th>
+          <th>מול הקבוצה</th>
+          <th>15 דק׳</th>
           <th>סטטוס</th>
         </tr>
       </thead>
@@ -211,6 +215,16 @@ let selectedTheme = THEMES[0];
 let quotes = loadJson(QUOTE_STORAGE, {});
 let history = loadJson(HISTORY_STORAGE, {});
 let autoTimer = null;
+
+function updateStickyOffsets() {
+  const header = document.querySelector("header");
+  const headerHeight = header ? Math.ceil(header.getBoundingClientRect().height) : 98;
+  document.documentElement.style.setProperty("--header-height", `${headerHeight}px`);
+  document.documentElement.style.setProperty("--table-sticky-top", `${headerHeight + 8}px`);
+}
+window.addEventListener("load", updateStickyOffsets);
+window.addEventListener("resize", updateStickyOffsets);
+
 
 function loadJson(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
@@ -318,21 +332,21 @@ function renderSelect() {
 function renderRows() {
   const tbody = document.getElementById("rows");
   tbody.innerHTML = "";
-  themeAssets(selectedTheme).forEach(asset => {
-    const q = quoteFor(asset.ticker);
-    const c = calc(asset);
+  const rows = themeAssets(selectedTheme).map(asset => ({asset, q: quoteFor(asset.ticker), c: calc(asset)}));
+  rows.sort((a,b) => {
+    const ag = Number.isFinite(a.c.gapDay) ? a.c.gapDay : -999;
+    const bg = Number.isFinite(b.c.gapDay) ? b.c.gapDay : -999;
+    return bg - ag;
+  });
+  rows.forEach(({asset, q, c}) => {
     const st = statusFor(c);
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><div class="ticker">${asset.ticker}</div><div class="name">${asset.name}</div></td>
-      <td><a class="tv-link" href="${tvUrl(asset.tvSymbol)}" target="_blank">${asset.tvSymbol}</a></td>
+      <td><a class="tv-link" href="${tvUrl(asset.tvSymbol)}" target="_blank"><div class="ticker">${asset.ticker}</div></a><div class="name">${asset.name}</div></td>
       <td><span class="num">${fmtPrice(q?.c)}</span></td>
-      <td><span class="num">${fmtPrice(q?.pc)}</span></td>
       <td><span class="num ${pctClass(c.ownDay)}">${fmtPct(c.ownDay)}</span></td>
-      <td><span class="num ${pctClass(c.ownM15)}">${fmtPct(c.ownM15)}</span></td>
-      <td><span class="num ${pctClass(c.peerDay)}">${fmtPct(c.peerDay)}</span></td>
       <td><span class="num ${pctClass(c.gapDay)}">${fmtPct(c.gapDay)}</span></td>
-      <td><span class="num ${pctClass(c.gapM15)}">${fmtPct(c.gapM15)}</span></td>
+      <td><span class="num ${pctClass(c.ownM15)}">${fmtPct(c.ownM15)}</span></td>
       <td><span class="badge ${st.cls}">${st.text}</span></td>`;
     tbody.appendChild(tr);
   });
@@ -350,10 +364,8 @@ function renderCards() {
   const closing = rows.filter(r => statusFor(r.calc).cls === "closing").sort((a,b)=>b.calc.gapM15-a.calc.gapM15).slice(0,3).map(r=>r.asset.ticker);
   document.getElementById("cardLeaders").textContent = leaders.length ? leaders.join(", ") : "אין";
   document.getElementById("cardClosing").textContent = closing.length ? closing.join(", ") : "אין";
-  const enough = assets.filter(a => Number.isFinite(m15Change(a.ticker))).length;
-  document.getElementById("cardHistory").textContent = enough + "/" + assets.length;
 }
-function renderAll() { renderSelect(); renderThemeList(); renderRows(); renderCards(); }
+function renderAll() { renderSelect(); renderThemeList(); renderRows(); renderCards(); updateStickyOffsets(); }
 function getApiKey() { return (document.getElementById("apiKey").value || localStorage.getItem(KEY_STORAGE) || "").trim(); }
 function saveApiKey() {
   const key = document.getElementById("apiKey").value.trim();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Momentum Relative Desk V6, Trader View</title>
+  <title>Momentum Desk V7, Agent Notes</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -57,7 +57,7 @@
     }
     main { padding: 14px 16px; overflow: visible; min-width: 0; }
     .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
-    .primary-bar { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto auto; gap: 8px; margin-bottom: 10px; align-items: center; }
+    .primary-bar { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto auto auto; gap: 8px; margin-bottom: 10px; align-items: center; }
     .advanced { border: 1px solid var(--line); background: #0b1220; border-radius: 12px; padding: 8px 10px; margin-bottom: 10px; }
     .advanced summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 700; }
     .advanced[open] summary { margin-bottom: 10px; color: var(--text); }
@@ -108,6 +108,20 @@
     .weak { background: #450a0a; border-color: #991b1b; color: #fecaca; }
     .neutral { background: #111827; color: #d1d5db; }
     .missing { background: #111827; color: #9ca3af; }
+    .agent-panel { background: #0b1220; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; }
+    .agent-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 8px; }
+    .agent-title { font-weight: 800; font-size: 14px; }
+    .agent-time { color: var(--muted); font-size: 12px; }
+    .agent-list { display: grid; grid-template-columns: 1fr; gap: 7px; }
+    .agent-item { border: 1px solid var(--line); background: #111827; border-radius: 10px; padding: 9px 10px; font-size: 13px; }
+    .agent-item.catchup { border-color: #4f46e5; background: #1e1b4b; color: #e0e7ff; }
+    .agent-item.weakness { border-color: #92400e; background: #451a03; color: #fed7aa; }
+    .agent-item.group { border-color: #166534; background: #052e16; color: #bbf7d0; }
+    .agent-item.empty { color: var(--muted); }
+    .alert-banner { display: none; border: 1px solid #4f46e5; background: #1e1b4b; color: #e0e7ff; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; font-size: 14px; font-weight: 800; }
+    .alert-banner.show { display: block; }
+    .sound-on { background: #064e3b; border-color: #047857; }
+    .sound-off { background: #172033; }
     .note { display:none; margin-top: 12px; color: var(--muted); font-size: 13px; border: 1px solid var(--line); background: #0b1220; border-radius: 12px; padding: 12px; }
     .log { white-space: pre-wrap; direction: ltr; text-align: left; max-height: 120px; overflow: auto; color: #cbd5e1; font-size: 12px; background: #020617; border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-top: 10px; }
     @media (max-width: 980px) {
@@ -122,8 +136,8 @@
 </head>
 <body>
 <header>
-  <h1>Momentum Desk V6, Trader View</h1>
-  <div class="subtitle">מי מוביל, מי מפגר, ומי סוגר פער בתוך הקבוצה.</div>
+  <h1>Momentum Desk V7, Agent Notes</h1>
+  <div class="subtitle">מי מוביל, מי מפגר, מי סוגר פער, ומה דורש תשומת לב עכשיו.</div>
   <div class="status-bar">
     <span class="pill good">מחובר ל־Finnhub REST Quote</span>
     <span class="pill">584 נכסים</span>
@@ -149,6 +163,7 @@
         <option value="120000">כל 120 שניות</option>
       </select>
       <button class="good" id="autoBtn">עדכון אוטומטי</button>
+      <button id="soundBtn" class="sound-off">צליל כבוי</button>
     </div>
 
     <details class="advanced">
@@ -183,6 +198,18 @@
       <div class="card"><div class="label">סוגרות פער</div><div class="value" id="cardClosing">אין</div><div class="small">מפגרות יומית, חזקות ב־15 דק׳</div></div>
     </div>
 
+    <div id="agentAlert" class="alert-banner"></div>
+
+    <section class="agent-panel" aria-label="Agent Notes">
+      <div class="agent-head">
+        <div class="agent-title">Agent Notes</div>
+        <div class="agent-time" id="agentUpdated">ממתין לנתונים</div>
+      </div>
+      <div id="agentNotes" class="agent-list">
+        <div class="agent-item empty">משוך מחירים לקבוצה כדי לקבל הערות סוכן.</div>
+      </div>
+    </section>
+
     <table>
       <thead>
         <tr>
@@ -211,10 +238,13 @@ const KEY_STORAGE = "momentum_desk_finnhub_key";
 const QUOTE_STORAGE = "momentum_desk_finnhub_quotes_v4";
 const HISTORY_STORAGE = "momentum_desk_finnhub_history_v4";
 const CUSTOM_STORAGE = "momentum_desk_custom_assets_v4";
+const SOUND_STORAGE = "momentum_desk_agent_sound_v7";
 let selectedTheme = THEMES[0];
 let quotes = loadJson(QUOTE_STORAGE, {});
 let history = loadJson(HISTORY_STORAGE, {});
 let autoTimer = null;
+let soundEnabled = localStorage.getItem(SOUND_STORAGE) === "1";
+let announcedAgentKeys = new Set();
 
 function updateStickyOffsets() {
   const header = document.querySelector("header");
@@ -314,7 +344,7 @@ function renderThemeList() {
     const btn = document.createElement("button");
     btn.className = "theme-btn" + (theme === selectedTheme ? " active" : "");
     btn.innerHTML = `<span>${theme}</span><span class="theme-count">${assets.length}</span>`;
-    btn.onclick = () => { selectedTheme = theme; document.getElementById("themeSelect").value = theme; renderAll(); };
+    btn.onclick = () => { selectedTheme = theme; document.getElementById("themeSelect").value = theme; announcedAgentKeys.clear(); renderAll(); };
     list.appendChild(btn);
   });
 }
@@ -329,6 +359,117 @@ function renderSelect() {
   });
   sel.value = selectedTheme;
 }
+
+function buildAgentNotes() {
+  const assets = themeAssets(selectedTheme);
+  const rows = assets.map(a => ({asset:a, c:calc(a), st:statusFor(calc(a))}));
+  const hasData = rows.some(r => Number.isFinite(r.c.gapDay));
+  if (!hasData) {
+    return [{type:"empty", key:"empty", text:"אין עדיין מספיק נתונים. משוך מחירים לקבוצה כדי שהסוכן יזהה מצבים."}];
+  }
+
+  const notes = [];
+  const catchups = rows
+    .filter(r => r.st.cls === "closing")
+    .sort((a,b) => (b.c.gapM15 ?? -999) - (a.c.gapM15 ?? -999))
+    .slice(0,2);
+  catchups.forEach(r => {
+    notes.push({
+      type:"catchup",
+      key:`catchup:${selectedTheme}:${r.asset.ticker}`,
+      text:`Catch-up: ${r.asset.ticker} מפגרת ${fmtPct(r.c.gapDay)} מול הקבוצה, אבל ב־15 דקות האחרונות היא חזקה יחסית ${fmtPct(r.c.gapM15)}. לבדיקה בגרף, לא איתות.`
+    });
+  });
+
+  const weakness = rows
+    .filter(r => Number.isFinite(r.c.ownDay) && r.c.ownDay >= -0.2 && Number.isFinite(r.c.gapDay) && r.c.gapDay <= -2 && r.st.cls !== "closing")
+    .sort((a,b) => a.c.gapDay - b.c.gapDay)
+    .slice(0,2);
+  weakness.forEach(r => {
+    notes.push({
+      type:"weakness",
+      key:`weakness:${selectedTheme}:${r.asset.ticker}`,
+      text:`חולשה יחסית: ${r.asset.ticker} נראית סבירה לבד (${fmtPct(r.c.ownDay)}), אבל חלשה מול הקבוצה ${fmtPct(r.c.gapDay)}. לא להניח שהיא חייבת להדביק.`
+    });
+  });
+
+  const leaders = rows
+    .filter(r => Number.isFinite(r.c.gapDay))
+    .sort((a,b) => b.c.gapDay - a.c.gapDay)
+    .slice(0,2)
+    .map(r => r.asset.ticker);
+  const laggards = rows
+    .filter(r => Number.isFinite(r.c.gapDay))
+    .sort((a,b) => a.c.gapDay - b.c.gapDay)
+    .slice(0,2)
+    .map(r => r.asset.ticker);
+  const closingNames = catchups.map(r => r.asset.ticker);
+  const groupText = `מצב קבוצה: ${leaders.length ? leaders.join(", ") : "אין"} מובילות; ${laggards.length ? laggards.join(", ") : "אין"} מפגרות; ${closingNames.length ? closingNames.join(", ") : "אין כרגע"} סוגרות פער.`;
+  notes.push({type:"group", key:`group:${selectedTheme}:${leaders.join('-')}:${laggards.join('-')}:${closingNames.join('-')}`, text: groupText});
+
+  return notes.slice(0,3);
+}
+function playAgentSound() {
+  if (!soundEnabled) return;
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 880;
+    gain.gain.value = 0.05;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    setTimeout(() => { osc.stop(); ctx.close(); }, 180);
+  } catch(e) {}
+}
+function showAgentAlert(note) {
+  const el = document.getElementById("agentAlert");
+  if (!el) return;
+  el.textContent = note.text;
+  el.className = "alert-banner show";
+  setTimeout(() => { el.className = "alert-banner"; }, 12000);
+}
+function maybeAlert(notes) {
+  const actionable = notes.find(n => n.type === "catchup" || n.type === "weakness");
+  if (!actionable || !actionable.key) return;
+  if (announcedAgentKeys.has(actionable.key)) return;
+  announcedAgentKeys.add(actionable.key);
+  showAgentAlert(actionable);
+  playAgentSound();
+}
+function renderAgentNotes() {
+  const notes = buildAgentNotes();
+  const list = document.getElementById("agentNotes");
+  const updated = document.getElementById("agentUpdated");
+  if (!list) return;
+  list.innerHTML = "";
+  notes.forEach(note => {
+    const div = document.createElement("div");
+    div.className = "agent-item " + note.type;
+    div.textContent = note.text;
+    list.appendChild(div);
+  });
+  if (updated) {
+    updated.textContent = "עודכן: " + new Date().toLocaleTimeString("he-IL", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+  }
+  maybeAlert(notes);
+}
+function updateSoundButton() {
+  const btn = document.getElementById("soundBtn");
+  if (!btn) return;
+  btn.textContent = soundEnabled ? "צליל פעיל" : "צליל כבוי";
+  btn.className = soundEnabled ? "sound-on" : "sound-off";
+}
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem(SOUND_STORAGE, soundEnabled ? "1" : "0");
+  updateSoundButton();
+  if (soundEnabled) playAgentSound();
+}
+
 function renderRows() {
   const tbody = document.getElementById("rows");
   tbody.innerHTML = "";
@@ -365,7 +506,7 @@ function renderCards() {
   document.getElementById("cardLeaders").textContent = leaders.length ? leaders.join(", ") : "אין";
   document.getElementById("cardClosing").textContent = closing.length ? closing.join(", ") : "אין";
 }
-function renderAll() { renderSelect(); renderThemeList(); renderRows(); renderCards(); updateStickyOffsets(); }
+function renderAll() { renderSelect(); renderThemeList(); renderRows(); renderCards(); renderAgentNotes(); updateSoundButton(); updateStickyOffsets(); }
 function getApiKey() { return (document.getElementById("apiKey").value || localStorage.getItem(KEY_STORAGE) || "").trim(); }
 function saveApiKey() {
   const key = document.getElementById("apiKey").value.trim();
@@ -525,12 +666,13 @@ function clearCustomAssets() {
 loadCustomAssets();
 const savedKey = localStorage.getItem(KEY_STORAGE) || "";
 if (savedKey) document.getElementById("apiKey").value = savedKey;
-document.getElementById("themeSelect").addEventListener("change", e => { selectedTheme = e.target.value; document.getElementById("customTheme").value = selectedTheme; renderAll(); });
+document.getElementById("themeSelect").addEventListener("change", e => { selectedTheme = e.target.value; document.getElementById("customTheme").value = selectedTheme; announcedAgentKeys.clear(); renderAll(); });
 document.getElementById("themeSearch").addEventListener("input", renderThemeList);
 document.getElementById("saveKeyBtn").addEventListener("click", saveApiKey);
 document.getElementById("clearKeyBtn").addEventListener("click", clearApiKey);
 document.getElementById("fetchBtn").addEventListener("click", fetchSelectedTheme);
 document.getElementById("autoBtn").addEventListener("click", toggleAuto);
+document.getElementById("soundBtn").addEventListener("click", toggleSound);
 document.getElementById("copyTvBtn").addEventListener("click", copyTradingViewList);
 document.getElementById("sampleBtn").addEventListener("click", loadNuclearSample);
 document.getElementById("clearDataBtn").addEventListener("click", clearData);

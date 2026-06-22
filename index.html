@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Momentum Desk V18 Desktop</title>
+  <title>Momentum Desk V19 Desktop</title>
   <style>
 :root {
   --bg:#07111f; --panel:#0f172a; --panel2:#111827; --soft:#162033;
@@ -23,6 +23,7 @@ button.primary { background:var(--blue); border-color:#1d4ed8; color:white; font
 button.good { background:#064e3b; border-color:#047857; }
 button.danger { background:#3f1111; border-color:#7f1d1d; }
 button:disabled { opacity:.55; cursor:not-allowed; }
+button.loading { background:#451a03; border-color:#92400e; }
 .search-box { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:14px; margin-bottom:12px; }
 .symbol-row { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; }
 .symbol-input { direction:ltr; text-align:left; font-size:24px; font-weight:800; text-transform:uppercase; padding:13px 14px; }
@@ -111,7 +112,7 @@ tr:hover td { background:#101b31; }
 </head>
 <body>
 <header>
-  <h1>Momentum Desk V18 Desktop</h1>
+  <h1>Momentum Desk V19 Desktop</h1>
   <div class="subtitle">מסך נקי: מקלידים סימבול, מקבלים קבוצה, מניות דומות ותובנות קצרות.</div>
 </header>
 
@@ -120,9 +121,10 @@ tr:hover td { background:#101b31; }
     <div class="symbol-row">
       <input id="symbolInput" class="symbol-input" placeholder="OKLO / HIVE / NVDA" autocomplete="off" />
       <button class="primary" id="findBtn">מצא</button>
-      <button class="good" id="fetchBtn">משוך מחירי קבוצה</button>
+      <button class="good" id="fetchBtn">רענן עכשיו</button>
     </div>
     <div class="hint">הכלי מחפש את קבוצת הטרייד הרלוונטית למניה, לא סקטור כללי וכבד.</div>
+    <div class="hint" id="autoStatus">אוטומטי: ממתין לסימבול ול־API</div>
   </section>
 
   <div id="alertBar" class="alert-bar"></div>
@@ -190,8 +192,8 @@ tr:hover td { background:#101b31; }
       <button class="danger" id="clearDataBtn">נקה נתונים</button>
       <button id="soundBtn">צליל כבוי</button>
       <select id="refreshInterval">
+        <option value="30000" selected>30 שניות</option>
         <option value="60000">60 שניות</option>
-        <option value="30000">30 שניות</option>
         <option value="120000">120 שניות</option>
       </select>
       <button class="good" id="autoBtn">אוטומטי</button>
@@ -218,19 +220,21 @@ const CATEGORIES = ["AI & Chips", "Energy / Nuclear / Power", "Speculative Momen
 const THEME_CATEGORIES = {"AI & Chips": ["AI Infrastructure", "Semiconductors", "DRAM / HBM / Memory", "AI Software / Apps", "Small Cap AI Momentum", "Cybersecurity", "Quantum Computing", "Software / SaaS Growth", "Mega Cap Tech / AI Cloud", "Israel Tech / Software"], "Energy / Nuclear / Power": ["Nuclear / SMR", "Uranium / Nuclear Fuel", "Power / Data Centers", "Energy / Oil & Gas", "Solar / Renewables", "Rare Earths / Lithium", "Gold / Miners", "Copper / Metals"], "Speculative Momentum": ["Space", "eVTOL / Air Mobility", "Drones / Defense Tech", "Defense / Aerospace", "EV / Batteries / Autonomy", "Biotech Momentum", "GLP-1 / Pharma Growth", "Meme / High Volatility", "IPO / Recent Momentum", "China ADR Momentum", "Gaming / AdTech", "Shipping / Transport", "Healthcare / Pharma Growth"], "Finance / Crypto": ["Bitcoin Miners", "Crypto Infrastructure", "Fintech / Brokers / Payments", "Banks / Financials", "Regional Banks"]};
 const PRIMARY_OVERRIDES = {"NVDA": "Semiconductors", "AVGO": "Semiconductors", "MRVL": "Semiconductors", "PLTR": "AI Software / Apps", "SOUN": "Small Cap AI Momentum", "BBAI": "Small Cap AI Momentum", "AI": "AI Software / Apps", "ZS": "Cybersecurity", "SMCI": "AI Infrastructure", "ARM": "Semiconductors", "RBRK": "Cybersecurity", "TEM": "AI Software / Apps", "UPST": "Fintech / Brokers / Payments", "HOOD": "Crypto Infrastructure", "COIN": "Crypto Infrastructure", "MSTR": "Crypto Infrastructure", "KTOS": "Drones / Defense Tech", "AVAV": "Drones / Defense Tech", "RDDT": "IPO / Recent Momentum", "JOBY": "eVTOL / Air Mobility", "ACHR": "eVTOL / Air Mobility", "OKLO": "Nuclear / SMR", "SMR": "Nuclear / SMR", "NNE": "Nuclear / SMR", "LEU": "Uranium / Nuclear Fuel", "CCJ": "Uranium / Nuclear Fuel", "VST": "Power / Data Centers", "CEG": "Power / Data Centers", "MU": "DRAM / HBM / Memory", "WDC": "DRAM / HBM / Memory", "SNDK": "DRAM / HBM / Memory", "IREN": "Bitcoin Miners", "MARA": "Bitcoin Miners", "RIOT": "Bitcoin Miners", "RKLB": "Space", "ASTS": "Space", "RCAT": "Drones / Defense Tech", "UMAC": "Drones / Defense Tech", "HIVE": "Bitcoin Miners", "AAPL": "Mega Cap Tech / AI Cloud", "AMZN": "Mega Cap Tech / AI Cloud", "MSFT": "Mega Cap Tech / AI Cloud", "GOOGL": "Mega Cap Tech / AI Cloud", "META": "Mega Cap Tech / AI Cloud", "NFLX": "Mega Cap Tech / AI Cloud", "INTU": "Software / SaaS Growth", "DUOL": "Software / SaaS Growth", "ADSK": "Software / SaaS Growth", "VRNS": "Cybersecurity", "SOXX": "Semiconductors", "PLTK": "Gaming / AdTech", "NICE": "Israel Tech / Software", "VLO": "Energy / Oil & Gas", "SSL": "Energy / Oil & Gas", "SEI": "Power / Data Centers", "FCX": "Copper / Metals", "ICOP": "Copper / Metals", "ZIM": "Shipping / Transport", "WGMI": "Bitcoin Miners", "TAN": "Solar / Renewables", "CIBR": "Cybersecurity", "XLV": "Healthcare / Pharma Growth", "AMPX": "EV / Batteries / Autonomy", "MBLY": "EV / Batteries / Autonomy", "ALMS": "Biotech Momentum"};
 
-const KEY_STORAGE = "momentum_desk_finnhub_key_v18";
-const QUOTE_STORAGE = "momentum_desk_quotes_v18";
-const HISTORY_STORAGE = "momentum_desk_history_v18";
-const CUSTOM_STORAGE = "momentum_desk_custom_assets_v18";
-const SOUND_STORAGE = "momentum_desk_sound_v18";
+const KEY_STORAGE = "momentum_desk_finnhub_key_v19";
+const QUOTE_STORAGE = "momentum_desk_quotes_v19";
+const HISTORY_STORAGE = "momentum_desk_history_v19";
+const CUSTOM_STORAGE = "momentum_desk_custom_assets_v19";
+const SOUND_STORAGE = "momentum_desk_sound_v19";
 
 let quotes = loadJson(QUOTE_STORAGE, {});
 let history = loadJson(HISTORY_STORAGE, {});
 let customAssets = loadJson(CUSTOM_STORAGE, []);
-let selectedTheme = localStorage.getItem("momentum_desk_selected_theme_v18") || "AI Infrastructure";
-let selectedCategory = localStorage.getItem("momentum_desk_selected_category_v18") || "AI & Chips";
-let selectedTicker = localStorage.getItem("momentum_desk_selected_ticker_v18") || "";
+let selectedTheme = localStorage.getItem("momentum_desk_selected_theme_v19") || "AI Infrastructure";
+let selectedCategory = localStorage.getItem("momentum_desk_selected_category_v19") || "AI & Chips";
+let selectedTicker = localStorage.getItem("momentum_desk_selected_ticker_v19") || "";
 let autoTimer = null;
+let isFetching = false;
+let fetchAbortController = null;
 let soundOn = localStorage.getItem(SOUND_STORAGE) === "1";
 
 function loadJson(key, fallback) {
@@ -340,7 +344,7 @@ function findSymbol() {
   const t = input.value.trim().toUpperCase();
   if (!t) { showAlert("הקלד סימבול"); return; }
   selectedTicker = t;
-  localStorage.setItem("momentum_desk_selected_ticker_v18", selectedTicker);
+  localStorage.setItem("momentum_desk_selected_ticker_v19", selectedTicker);
   const primary = primaryThemeFor(t);
   if (!primary) {
     showAlert(`${t} לא נמצא ביקום הטרנדי. אפשר להוסיף אותו ידנית בהגדרות.`);
@@ -349,17 +353,20 @@ function findSymbol() {
   }
   selectedTheme = primary;
   selectedCategory = categoryForTheme(primary);
-  localStorage.setItem("momentum_desk_selected_theme_v18", selectedTheme);
-  localStorage.setItem("momentum_desk_selected_category_v18", selectedCategory);
+  localStorage.setItem("momentum_desk_selected_theme_v19", selectedTheme);
+  localStorage.setItem("momentum_desk_selected_category_v19", selectedCategory);
   renderAll();
+  if (getApiKey()) { fetchSelectedTheme("symbol"); if (!autoTimer) startAuto(); }
   document.getElementById("resultHero").scrollIntoView({behavior:"smooth", block:"start"});
 }
 function switchTheme(theme) {
   selectedTheme = theme;
   selectedCategory = categoryForTheme(theme);
-  localStorage.setItem("momentum_desk_selected_theme_v18", selectedTheme);
-  localStorage.setItem("momentum_desk_selected_category_v18", selectedCategory);
+  localStorage.setItem("momentum_desk_selected_theme_v19", selectedTheme);
+  localStorage.setItem("momentum_desk_selected_category_v19", selectedCategory);
   renderAll();
+  const autoBtn = document.getElementById("autoBtn"); if (autoBtn) autoBtn.textContent = "הפעל אוטומטי";
+  if (getApiKey() && selectedTicker) { startAuto(); fetchSelectedTheme("init"); }
 }
 function setTicker(t) {
   document.getElementById("symbolInput").value = t;
@@ -481,9 +488,10 @@ function clearApiKey() {
   document.getElementById("apiKey").value = "";
   log("API key removed");
 }
-async function fetchQuote(asset, token) {
+async function fetchQuote(asset, token, signal) {
   const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(asset.ticker)}&token=${encodeURIComponent(token)}`;
-  const res = await fetch(url);
+  const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 9000));
+  const res = await Promise.race([fetch(url, {signal}), timeout]);
   if (res.status === 429) throw new Error("429 Too Many Requests");
   if (!res.ok) throw new Error(`${asset.ticker} HTTP ${res.status}`);
   const data = await res.json();
@@ -493,39 +501,82 @@ async function fetchQuote(asset, token) {
   addHistory(asset.ticker, q.c);
 }
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-async function fetchSelectedTheme() {
+async function fetchSelectedTheme(source="manual") {
+  if (isFetching) {
+    log("Fetch skipped, previous fetch still running");
+    return;
+  }
   const token = getApiKey();
-  if (!token) { alert("הזן מפתח Finnhub ושמור אותו בדפדפן"); return; }
+  if (!token) {
+    const st = document.getElementById("autoStatus");
+    if (st) st.textContent = "אוטומטי: חסר Finnhub API";
+    if (source === "manual") alert("הזן מפתח Finnhub ושמור אותו בדפדפן");
+    return;
+  }
   const assets = assetsByTheme(selectedTheme);
   const btn = document.getElementById("fetchBtn");
-  btn.disabled = true; btn.textContent = "מושך...";
+  isFetching = true;
+  fetchAbortController = new AbortController();
+  btn.disabled = true;
+  btn.classList.add("loading");
+  btn.textContent = "מרענן...";
+  const st = document.getElementById("autoStatus");
+  if (st) st.textContent = "מרענן עכשיו: " + selectedTheme;
   let ok=0, fail=0;
   log(`Fetching ${assets.length} symbols for ${selectedTheme}`);
-  for (const asset of assets) {
-    try {
-      await fetchQuote(asset, token); ok++; renderAll(); await sleep(120);
-    } catch(e) {
-      fail++; log(`${asset.ticker}: ${e.message}`);
-      if (String(e.message).includes("429")) break;
+  try {
+    for (const asset of assets) {
+      try {
+        await fetchQuote(asset, token, fetchAbortController.signal);
+        ok++;
+        renderAll();
+        await sleep(120);
+      } catch(e) {
+        fail++;
+        log(`${asset.ticker}: ${e.message}`);
+        if (String(e.message).includes("429")) break;
+      }
     }
+    saveJson(QUOTE_STORAGE, quotes);
+    saveJson(HISTORY_STORAGE, history);
+    const stamp = new Date().toLocaleTimeString("he-IL", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+    document.getElementById("lastUpdatePill").textContent = "עודכן: " + stamp;
+    if (st) st.textContent = `אוטומטי פעיל, עדכון אחרון ${stamp}`;
+    log(`Done. Success: ${ok}, Failed: ${fail}`);
+  } finally {
+    isFetching = false;
+    fetchAbortController = null;
+    btn.disabled = false;
+    btn.classList.remove("loading");
+    btn.textContent = "רענן עכשיו";
+    renderAll();
   }
-  saveJson(QUOTE_STORAGE, quotes); saveJson(HISTORY_STORAGE, history);
-  const stamp = new Date().toLocaleTimeString("he-IL", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
-  document.getElementById("lastUpdatePill").textContent = "עודכן: " + stamp;
-  log(`Done. Success: ${ok}, Failed: ${fail}`);
-  btn.disabled = false; btn.textContent = "משוך מחירי קבוצה";
-  renderAll();
+}
+function startAuto() {
+  if (autoTimer) return;
+  const ms = Number(document.getElementById("refreshInterval")?.value || 30000);
+  autoTimer = setInterval(() => fetchSelectedTheme("auto"), ms);
+  const btn = document.getElementById("autoBtn");
+  if (btn) { btn.textContent = "עצור אוטומטי"; btn.className = "danger"; }
+  const st = document.getElementById("autoStatus");
+  if (st) st.textContent = "אוטומטי פעיל, כל " + Math.round(ms/1000) + " שניות";
+  log("Auto refresh started");
+}
+function stopAuto() {
+  if (autoTimer) clearInterval(autoTimer);
+  autoTimer = null;
+  if (fetchAbortController) {
+    try { fetchAbortController.abort(); } catch(e) {}
+  }
+  const btn = document.getElementById("autoBtn");
+  if (btn) { btn.textContent = "הפעל אוטומטי"; btn.className = "good"; }
+  const st = document.getElementById("autoStatus");
+  if (st) st.textContent = "אוטומטי כבוי";
+  log("Auto refresh stopped");
 }
 function toggleAuto() {
-  const btn = document.getElementById("autoBtn");
-  if (autoTimer) {
-    clearInterval(autoTimer); autoTimer=null; btn.textContent="אוטומטי"; btn.className="good"; log("Auto refresh stopped"); return;
-  }
-  const ms = Number(document.getElementById("refreshInterval").value || 60000);
-  fetchSelectedTheme();
-  autoTimer = setInterval(fetchSelectedTheme, ms);
-  btn.textContent = "עצור אוטומטי"; btn.className = "danger";
-  log("Auto refresh started");
+  if (autoTimer) stopAuto();
+  else startAuto();
 }
 function updateSoundButton() {
   const b = document.getElementById("soundBtn");
@@ -563,13 +614,15 @@ function addCustom() {
 function clearCustom() {
   if (!confirm("לנקות תוספות ידניות?")) return;
   customAssets = []; saveJson(CUSTOM_STORAGE, customAssets); renderAll();
+  const autoBtn = document.getElementById("autoBtn"); if (autoBtn) autoBtn.textContent = "הפעל אוטומטי";
+  if (getApiKey() && selectedTicker) { startAuto(); fetchSelectedTheme("init"); }
 }
 function init() {
   document.getElementById("apiKey").value = localStorage.getItem(KEY_STORAGE) || "";
   document.getElementById("symbolInput").value = selectedTicker;
   document.getElementById("symbolInput").addEventListener("keydown", e => { if (e.key === "Enter") findSymbol(); });
   document.getElementById("findBtn").onclick = findSymbol;
-  document.getElementById("fetchBtn").onclick = fetchSelectedTheme;
+  document.getElementById("fetchBtn").onclick = () => fetchSelectedTheme("manual");
   document.getElementById("autoBtn").onclick = toggleAuto;
   document.getElementById("soundBtn").onclick = toggleSound;
   document.getElementById("saveKeyBtn").onclick = saveApiKey;
@@ -579,6 +632,8 @@ function init() {
   document.getElementById("addCustomBtn").onclick = addCustom;
   document.getElementById("clearCustomBtn").onclick = clearCustom;
   renderAll();
+  const autoBtn = document.getElementById("autoBtn"); if (autoBtn) autoBtn.textContent = "הפעל אוטומטי";
+  if (getApiKey() && selectedTicker) { startAuto(); fetchSelectedTheme("init"); }
 }
 init();
 </script>

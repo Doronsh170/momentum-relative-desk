@@ -154,6 +154,11 @@ details,.legalBox{padding:14px 16px;margin-top:14px}
   .peers{grid-template-columns:1fr!important}
 }
 
+
+.apiLink{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:12px;background:#172033;color:#bfdbfe;text-decoration:none;font-weight:900;padding:10px 12px;font-size:14px}
+.apiLink:hover{border-color:#60a5fa}
+body.light .apiLink{background:#ffffff;color:#1d4ed8}
+
 </style></head><body><header><h1>Momentum Desk</h1><div class="sub">מפת סקטורים ותתי־סקטורים למניות וול סטריט</div></header><main class="desktopShell">
   <section class="searchPanel">
     <div class="searchCopy">
@@ -195,7 +200,7 @@ details,.legalBox{padding:14px 16px;margin-top:14px}
 
   <details>
     <summary>עוד</summary>
-    <div class="toolbar"><input id="apiKey" class="api" type="password" placeholder="Finnhub API key"/><button id="saveKeyBtn">שמור API</button><button id="clearKeyBtn" class="danger">מחק API</button><button id="clearDataBtn" class="danger">נקה נתונים</button></div>
+    <div class="toolbar"><input id="apiKey" class="api" type="password" placeholder="Finnhub API key"/><a class="apiLink" target="_blank" rel="noopener" href="https://finnhub.io/">פתח Finnhub</a><button id="saveKeyBtn">שמור API</button><button id="clearKeyBtn" class="danger">מחק API</button><button id="clearDataBtn" class="danger">נקה נתונים</button></div>
     <div id="log" class="log"></div>
   </details>
 

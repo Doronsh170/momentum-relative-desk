@@ -112,6 +112,52 @@ body.light .apiLink{background:#fff;color:var(--blue)}
   .suggestion{grid-template-columns:80px minmax(0,1fr)}
   .sgTheme{display:none}
 }
+
+body.light button,
+body.light a.button,
+body.light .apiLink{
+  color:#ffffff;
+}
+body.light button:not(.primary):not(.good):not(.danger),
+body.light a.button:not(.primary):not(.good):not(.danger),
+body.light .apiLink{
+  background:#1e293b;
+  border-color:#334155;
+}
+body.light button.primary{
+  color:#ffffff;
+}
+body.light button.good{
+  color:#ffffff;
+}
+body.light button.danger{
+  color:#ffffff;
+}
+
+
+/* stronger contrast overrides for light mode buttons */
+body.light button,
+body.light .controls button,
+body.light .apiRow button,
+body.light .toolbar button{
+  color:#ffffff !important;
+}
+body.light button:not(.primary):not(.good):not(.danger){
+  background:#1e293b !important;
+  border-color:#334155 !important;
+}
+body.light #themeBtn,
+body.light #autoBtn,
+body.light #saveKeyBtn{
+  background:#1e293b !important;
+  color:#ffffff !important;
+  border-color:#334155 !important;
+}
+body.light #clearKeyBtn,
+body.light #clearDataBtn{
+  color:#ffffff !important;
+}
+
 </style>
 </head>
 <body>
